@@ -64,11 +64,10 @@ int main()
 
 	std::vector<std::pair<unsigned, bool>> segments = GetSegments(input);
 
-	auto fun = [](const std::pair<unsigned, bool> &a, const std::pair<unsigned, bool> &b)
+	std::sort(segments.begin(), segments.end(), [](const std::pair<unsigned, bool> &a, const std::pair<unsigned, bool> &b)
 	{
-		return (a.first == b.first) ? (a.second) : (a.first < b.first);
-	};
-	std::sort(segments.begin(), segments.end(), fun);
+		return (a.first != b.first) ? (a.first < b.first) : (a.second);
+	});
 
 	unsigned result = FindResult(segments, m);
 
