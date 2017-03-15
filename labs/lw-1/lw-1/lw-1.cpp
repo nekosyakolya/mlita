@@ -6,7 +6,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
-
+#include <algorithm>
 
 void InitArray(std::vector<std::vector<bool>> & field, unsigned n, unsigned m)
 {
@@ -37,6 +37,14 @@ struct Building
 };
 
 
+
+struct Bed
+{
+	Point first;
+	Point second;
+	unsigned area = 0;
+};
+
 std::vector<Building> GetBuilding(unsigned n, std::ifstream & input)
 {
 	std::vector<Building> buildings;
@@ -65,6 +73,18 @@ void BetBuilding(std::vector<std::vector<bool>> & field, const Building &bulding
 	}
 }
 
+
+void BetBed(std::vector<std::vector<bool>> & field, const Bed &bed)
+{
+	for (size_t i = bed.first.y; i < bed.second.y; ++i)
+	{
+		for (size_t j = bed.first.x + 1; j <= bed.second.x; ++j)
+		{
+			field[i][j] = false;
+		}
+	}
+}
+
 void FillArray(std::vector<std::vector<bool>> & field, const std::vector<Building> &buldings)
 {
 	for (auto bulding : buldings)
@@ -73,14 +93,6 @@ void FillArray(std::vector<std::vector<bool>> & field, const std::vector<Buildin
 	}
 }
 
-
-
-struct Bed
-{
-	Point first;
-	Point second;
-	unsigned area = 0;
-};
 
 
 
@@ -120,6 +132,9 @@ std::vector<Bed> GetBeds(const std::vector<std::vector<bool>> & field)
 
 }
 
+
+
+
 int main()
 {
 	unsigned n = 0;
@@ -143,16 +158,63 @@ int main()
 	std::vector<Building> buldings = GetBuilding(n, input);
 	FillArray(field, buldings);
 
-
-	//while m != 0 && есть свободные
-	std::vector<Bed> tmpBeds = GetBeds(field);
-
-
-	for (auto bed : tmpBeds)
+	for (unsigned i = m; i != 0; --i)
 	{
+		std::vector<Bed> tmpBeds = GetBeds(field);
 
+		std::vector<Bed> currentBeds;
+
+		std::vector<Bed> resultBeds;
+
+		for (auto bed : tmpBeds)
+		{
+			currentBeds.push_back(bed);
+
+			while (currentBeds.size() != 0)
+			{
+				//for
+				Bed tmp = *currentBeds.begin();
+				for (auto b : tmpBeds)
+				{
+					if (tmp.second.y == b.first.y && ((b.first.x <= tmp.first.x && b.second.x >= tmp.second.x)
+						|| (b.first.x >= tmp.first.x && b.second.x <= tmp.second.x)
+						))
+					{
+						Bed newBed;
+						newBed.first.y = tmp.first.y;
+						newBed.second.y = b.second.y;
+						newBed.first.x = (tmp.first.x < b.first.x) ? b.first.x : tmp.first.x;
+						newBed.second.x = (tmp.second.x < b.second.x) ? tmp.second.x : b.second.x;
+						newBed.area = (newBed.second.x - newBed.first.x) * (newBed.second.y - newBed.first.y);
+						currentBeds.push_back(newBed);
+
+					}
+				}
+
+				Bed result = *std::max_element(currentBeds.begin(), currentBeds.end(), [](const Bed& a, const Bed& b) {
+					return a.area < b.area;
+				});
+				resultBeds.push_back(result);
+				currentBeds.erase(currentBeds.begin());
+
+			}
+
+		}
+
+
+		Bed result;
+		if (resultBeds.size() != 0)
+		{
+			result = *std::max_element(resultBeds.begin(), resultBeds.end(), [](const Bed& a, const Bed& b) {
+				return a.area < b.area;
+			});
+		}
+		BetBed(field, result);
+
+		output << result.first.x << ' ' << result.first.y << ' '
+		<< result.second.x << ' ' << result.second.y << std::endl;
+		resultBeds.clear();
 	}
-
 	return EXIT_SUCCESS;
 }
 
