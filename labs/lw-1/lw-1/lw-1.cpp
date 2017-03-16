@@ -1,26 +1,9 @@
-// lw-1.cpp: определяет точку входа для консольного приложения.
-//
-
 #include "stdafx.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
 #include <algorithm>
-
-void InitSite(std::vector<std::vector<bool>> & field, unsigned n, unsigned m)
-{
-	for (size_t i = 0; i < n; ++i)
-	{
-		field[i].resize(m);
-
-		for (size_t j = 0; j < m; ++j)
-		{
-			field[i][j] = (j == 0 || j == m - 1) ? false : true;
-			
-		}
-	}
-}
 
 
 struct Point
@@ -44,6 +27,20 @@ struct Bed
 	unsigned area = 0;
 };
 
+
+void InitSite(std::vector<std::vector<bool>> & field, unsigned n, unsigned m)
+{
+	for (size_t i = 0; i < n; ++i)
+	{
+		field[i].resize(m);
+
+		for (size_t j = 0; j < m; ++j)
+		{
+			field[i][j] = (j == 0 || j == m - 1) ? false : true;
+			
+		}
+	}
+}
 
 bool IsValidWidth(const Building &building, unsigned a)
 {
@@ -103,7 +100,23 @@ void FillSite(std::vector<std::vector<bool>> & field, const std::vector<Building
 	}
 }
 
+void AddBeds(std::vector<Point> &coordinates, std::vector<Bed> &tmpBeds)
+{
+	while (coordinates.size() != 0)
+	{
+		size_t j = 0;
+		Bed newBed;
+		newBed.bed.first.x = coordinates[j].x;
+		newBed.bed.first.y = coordinates[j].y;
+		newBed.bed.second.x = coordinates[j + 1].x;
+		newBed.bed.second.y = coordinates[j + 1].y;
+		newBed.area = newBed.bed.second.x - newBed.bed.first.x;
+		tmpBeds.push_back(newBed);
 
+		coordinates.erase(coordinates.begin() + j + 1);
+		coordinates.erase(coordinates.begin() + j);
+	}
+}
 
 
 std::vector<Bed> GetBeds(const std::vector<std::vector<bool>> & field)
@@ -117,26 +130,13 @@ std::vector<Bed> GetBeds(const std::vector<std::vector<bool>> & field)
 			if (field[i][j] != field[i][j + 1])
 			{
 				Point tmp;
-				tmp.x = j;//+1
+				tmp.x = j;
 				tmp.y = (!field[i][j]) ? i : i + 1;
 				coordinates.push_back(tmp);
 			}
 		}
 
-		while (coordinates.size() != 0)
-		{
-			size_t j = 0;
-			Bed newBed;
-			newBed.bed.first.x = coordinates[j].x;
-			newBed.bed.first.y = coordinates[j].y;
-			newBed.bed.second.x = coordinates[j + 1].x;
-			newBed.bed.second.y = coordinates[j + 1].y;
-			newBed.area = newBed.bed.second.x - newBed.bed.first.x;
-			tmpBeds.push_back(newBed);
-
-			coordinates.erase(coordinates.begin() + j + 1);
-			coordinates.erase(coordinates.begin() + j);
-		}
+		AddBeds(coordinates, tmpBeds);
 	}
 	return tmpBeds;
 
@@ -165,6 +165,58 @@ void CheckValidity(unsigned n, unsigned m, unsigned a, unsigned b)
 }
 
 
+
+void ChangeSite(std::vector<Bed> &resultBeds, std::vector<std::vector<bool>> &site, Bed &result)
+{
+	if (resultBeds.size() != 0)
+	{
+		result = *std::max_element(resultBeds.begin(), resultBeds.end(), [](const Bed& a, const Bed& b) {
+			return a.area < b.area;
+		});
+		BetBuilding(site, result.bed);
+		resultBeds.clear();
+	}
+}
+
+
+void OutputInfo(std::ofstream &output, const Bed &result)
+{
+	output << result.bed.first.x << ' ' << result.bed.first.y << ' '
+		<< result.bed.second.x << ' ' << result.bed.second.y << std::endl;
+}
+
+
+void AddResult(std::vector<Bed> &currentBeds, std::vector<Bed> &resultBeds)
+{
+	Bed max = *std::max_element(currentBeds.begin(), currentBeds.end(), [](const Bed& a, const Bed& b) {
+		return a.area < b.area;
+	});
+	resultBeds.push_back(max);
+	currentBeds.erase(currentBeds.begin());
+}
+
+
+
+Bed GetBed(const Bed &tmp, const Bed &b)
+{
+	Bed newBed;
+	newBed.bed.first.y = tmp.bed.first.y;
+	newBed.bed.second.y = b.bed.second.y;
+	newBed.bed.first.x = (tmp.bed.first.x < b.bed.first.x) ? b.bed.first.x : tmp.bed.first.x;
+	newBed.bed.second.x = (tmp.bed.second.x < b.bed.second.x) ? tmp.bed.second.x : b.bed.second.x;
+	newBed.area = (newBed.bed.second.x - newBed.bed.first.x) * (newBed.bed.second.y - newBed.bed.first.y);
+	return newBed;
+}
+
+
+bool CanGlued(const Bed &first, const Bed &second)
+{
+	return (first.bed.second.y == second.bed.first.y && ((second.bed.first.x <= first.bed.first.x &&
+		second.bed.second.x >= first.bed.second.x)
+		|| (second.bed.first.x >= first.bed.first.x && second.bed.second.x <= first.bed.second.x)
+		));
+}
+
 void FindOptimalLocation(unsigned m, std::vector<std::vector<bool>> &site, std::ofstream &output)
 {
 	for (unsigned i = m; i != 0; --i)
@@ -176,50 +228,24 @@ void FindOptimalLocation(unsigned m, std::vector<std::vector<bool>> &site, std::
 		for (auto bed : tmpBeds)
 		{
 			currentBeds.push_back(bed);
-
 			while (currentBeds.size() != 0)
 			{
 				Bed tmp = *currentBeds.begin();
 				for (auto b : tmpBeds)
 				{
-					if (tmp.bed.second.y == b.bed.first.y && ((b.bed.first.x <= tmp.bed.first.x &&
-						b.bed.second.x >= tmp.bed.second.x)
-						|| (b.bed.first.x >= tmp.bed.first.x && b.bed.second.x <= tmp.bed.second.x)
-						))
+					if (CanGlued(tmp, b))
 					{
-						Bed newBed;
-						newBed.bed.first.y = tmp.bed.first.y;
-						newBed.bed.second.y = b.bed.second.y;
-						newBed.bed.first.x = (tmp.bed.first.x < b.bed.first.x) ? b.bed.first.x : tmp.bed.first.x;
-						newBed.bed.second.x = (tmp.bed.second.x < b.bed.second.x) ? tmp.bed.second.x : b.bed.second.x;
-						newBed.area = (newBed.bed.second.x - newBed.bed.first.x) * (newBed.bed.second.y - newBed.bed.first.y);
+						Bed newBed = GetBed(tmp, b);
 						currentBeds.push_back(newBed);
-
 					}
 				}
-
-				Bed result = *std::max_element(currentBeds.begin(), currentBeds.end(), [](const Bed& a, const Bed& b) {
-					return a.area < b.area;
-				});
-				resultBeds.push_back(result);
-				currentBeds.erase(currentBeds.begin());
-
+				AddResult(currentBeds, resultBeds);
 			}
 
 		}
-
 		Bed result;
-		if (resultBeds.size() != 0)
-		{
-			result = *std::max_element(resultBeds.begin(), resultBeds.end(), [](const Bed& a, const Bed& b) {
-				return a.area < b.area;
-			});
-			BetBuilding(site, result.bed);
-			resultBeds.clear();
-		}
-
-		output << result.bed.first.x << ' ' << result.bed.first.y << ' '
-			<< result.bed.second.x << ' ' << result.bed.second.y << std::endl;
+		ChangeSite(resultBeds, site, result);
+		OutputInfo(output, result);
 	}
 }
 
@@ -235,17 +261,17 @@ int main()
 	std::ofstream output("output.txt");
 	try
 	{
-		input >> n;//постройки
-		input >> m;//грядки
+		input >> n;//num buildings
+		input >> m;//num beds
 		input.get();
 
-		input >> a;//стороны
+		input >> a;//num side
 		input >> b;
 		input.get();
 		CheckValidity(n, m, a, b);
 
-		std::vector<std::vector<bool>> site(b);//b= y
-		InitSite(site, b, a + 2);//b= y
+		std::vector<std::vector<bool>> site(b);
+		InitSite(site, b, a + 2);
 
 		std::vector<Building> buldings = GetBuilding(a, b, input);
 		FillSite(site, buldings);
