@@ -1,3 +1,5 @@
+//1.5 Красильникова.О. ПС-21
+
 #include "stdafx.h"
 #include <iostream>
 #include <fstream>
@@ -194,9 +196,11 @@ Bed GetBed(const Bed &tmp, const Bed &bed)
 
 bool CanGlued(const Bed &firstBed, const Bed &secondBed)
 {
-	return (firstBed.building.rightBottom.y == secondBed.building.leftUp.y && ((secondBed.building.leftUp.x <= firstBed.building.leftUp.x &&
-		secondBed.building.rightBottom.x >= firstBed.building.rightBottom.x)
-		|| (secondBed.building.leftUp.x >= firstBed.building.leftUp.x && secondBed.building.rightBottom.x <= firstBed.building.rightBottom.x)
+	return (firstBed.building.rightBottom.y == secondBed.building.leftUp.y && 
+		((secondBed.building.leftUp.x <= firstBed.building.leftUp.x &&
+		firstBed.building.leftUp.x <= secondBed.building.rightBottom.x)
+		|| (secondBed.building.leftUp.x >= firstBed.building.leftUp.x && 
+			secondBed.building.leftUp.x <= firstBed.building.rightBottom.x)
 		));
 }
 
