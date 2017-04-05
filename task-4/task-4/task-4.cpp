@@ -69,6 +69,7 @@ int main()
 	std::string secondNum = "";
 	
 	std::ifstream input("input.txt");
+	std::ofstream output("output.txt");
 
 	input >> firstNum;
 	input.get();

@@ -204,32 +204,50 @@ bool CanGlued(const Bed &firstBed, const Bed &secondBed)
 		));
 }
 
+void TestD(std::vector<Bed> &unusedRows, std::vector<Bed> &currentBeds)
+{
+	Bed tmp = *currentBeds.begin();
+	for (auto it = unusedRows.begin(); it != unusedRows.end(); ++it)
+	{
+		if (CanGlued(tmp, *it))
+		{
+			Bed newBed = GetBed(tmp, *it);
+			currentBeds.push_back(newBed);
+		}
+	}
+}
+
+void Test(std::vector<Bed> &unusedRows, std::vector<Bed> &currentBeds, std::vector<Bed> &resultBeds)
+{
+	/*while (currentBeds.size() != 0)
+	{*/
+
+		TestD(unusedRows, currentBeds);
+		AddResult(currentBeds, resultBeds);
+	//}
+}
+
+void Rip(std::vector<Bed> &unusedRows, std::vector<Bed> &currentBeds, std::vector<Bed> &resultBeds)
+{
+	for (auto bed = unusedRows.begin(); bed != unusedRows.end(); ++bed)
+	{
+		currentBeds.push_back(*bed);
+
+		Test(unusedRows, currentBeds, resultBeds);//циклится??
+
+	}
+}
+
+
 void FindOptimalLocation(unsigned m, std::vector<std::vector<bool>> &field, std::ofstream &output)
 {
 	for (unsigned i = m; i != 0; --i)
 	{
 		std::vector<Bed> unusedRows = GetUnusedRows(field);
-		std::vector<Bed> currentBeds;
-		std::vector<Bed> resultBeds;
+		std::vector<Bed> currentBeds(0);
+		std::vector<Bed> resultBeds(0);
 
-		for (auto bed : unusedRows)
-		{
-			currentBeds.push_back(bed);
-			while (currentBeds.size() != 0)
-			{
-				Bed tmp = *currentBeds.begin();
-				for (auto bed : unusedRows)
-				{
-					if (CanGlued(tmp, bed))
-					{
-						Bed newBed = GetBed(tmp, bed);
-						currentBeds.push_back(newBed);
-					}
-				}
-				AddResult(currentBeds, resultBeds);
-			}
-
-		}
+		Rip(unusedRows, currentBeds, resultBeds);
 		Bed result;
 		ChangeField(resultBeds, field, result);
 		OutputInfo(output, result);
@@ -271,6 +289,5 @@ int main()
 	{
 		std::cerr << err.what();
 	}
-
 	return EXIT_SUCCESS;
 }
