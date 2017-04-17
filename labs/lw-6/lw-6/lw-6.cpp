@@ -32,20 +32,6 @@ unsigned GetNum(const std::vector<int> &number, unsigned pos)
 	return result;
 }
 
-//
-//void SetNum(const std::string &str, unsigned &result, unsigned &resultNum)
-//{
-//	result = 0;
-//	resultNum = 0;
-//	for (auto el : str)
-//	{
-//		result += static_cast<unsigned>(el) - '0';
-//		resultNum *= 10;
-//		resultNum += static_cast<unsigned>(el) - '0';
-//	}
-//}
-
-
 //надо защитить от переполнения
 void IncNumber(std::vector<int> &number, unsigned i)
 {
@@ -81,19 +67,21 @@ std::vector<int> SubNumbers(std::vector<int> &num1, std::vector<int> &num2)
 std::vector<int> AddNumbers(std::vector<int> &num1, std::vector<int> &num2)
 {
 	int shortNum = 0;
-
-	//std::string result = "";
-	std::vector<int> result;
+	std::vector<int> result(num1.size());
 	for (size_t i = 0; i < num1.size() && i < num2.size(); ++i)
 	{
 		shortNum = num1[i] + num2[i];
 
 		if (shortNum > 9)
 		{
-			++num1[i + 1];
-			shortNum -= 9;
+			//++num1[i + 1];
+			if (i == result.size() - 1)
+			{
+				result.push_back(1);
+			}
+			shortNum %= 10;//-9?????
 		}
-		result.push_back(shortNum);
+		result[i] = shortNum;
 	}
 
 	return result;
@@ -172,41 +160,23 @@ int main()
 	{
 
 		unsigned currResult = GetNum(second.number, 1);
-		std::vector<int> tmpRes(numLenght);
-
-		//if (first.count <= currResult)
-		//{
-		//	IncNumber(first.number, 0);//увеличиваем вектор
-		//	first.count = GetNum(first.number, 0);//считаем число заново
-
-		//	//тут надо еще сохранить число для подсчета колва
-
-		//	std::vector<int> tmp(numLenght);
-		//	tmp.push_back(1);
-		//	tmpRes = SubNumbers(tmp, second.number);
-
-		//	second.number = std::vector<int> (numLenght);//обнуляем вектор
-
-		//	second.count = 0;//считаем число заново
-
-			//при вычитании из first.count числа,без учета последнего надо проверять
-		//получается ли это число больше или равно 10--тут цикл?
-		//или меньше последнего
-		// в этих случаях плюсуем к предпоследнему элементу 1
-
-		//еще ввод 02 98  или 02 09 или 02 90   //83 91   //83 93
-
+		
 
 		std::vector<int> newNumber = CountNewNumber(first, second);
-		std::copy(newNumber.rbegin(), newNumber.rend(), std::ostream_iterator<int>(std::cout, " "));
-		//std::vector<int> res = SubNumbers(newNumber, second.number);
-
-		//add res && tmpRes сложим,если было до
-
-		//res = AddNumbers(res, tmpRes);
-		//std::copy(res.begin(), res.end(), std::ostream_iterator<int>(output, " "));
-		//output << std::endl;
-
+		std::vector<int> res = SubNumbers(newNumber, second.number);
+		int i = res.size() - 1;
+		for (i; i >= 0; --i)
+		{
+			if (res[i] != 0)
+			{
+				break;
+			}
+		}
+		for (i; i >= 0; --i)
+		{
+			output << res[i];
+		}
+		output << std::endl;
 
 	}
 	else
@@ -216,26 +186,53 @@ int main()
 
 		if (second.number.size() != 1)
 		{
-			for (size_t i = 0; tmp > first.count && i < second.number.size() - 1; ++i)
+			for (size_t i = 0; (tmp > first.count || second.number[i] > 9) && i < second.number.size() - 1; ++i)
 			{
-
+				tmp -= second.number[i];
+				++tmp;
 				second.number[i] = 0;
 				++second.number[i + 1];//if >9?
 
-				tmp -= second.number[i];
-				++tmp;
 			}
 		}
-		if (second.number[second.number.size() - 1] > 9 || second.number.size() == 1)
+		std::vector<int> tmpRes;
+
+		//не нравится мне это условие
+		if (second.number.back() > 9 || second.number.size() == 1 || second.number.back() > first.count)
 		{
-			second.number[second.number.size() - 1] = 0;
+		/*if (second.number.size() == 1 || tmp > first.count)
+		{*/
+			std::vector<int> tmp(numLenght);
+			tmp.push_back(1);
+			tmpRes = SubNumbers(tmp, tmpNum);
+
+			second.number.back() = 0;
 			IncNumber(first.number, 0);
 			first.count = GetNum(first.number, 0);
 		}
 		second.count = GetNum(second.number, 0);
 
 		std::vector<int> newNumber = CountNewNumber(first, second);
-		std::copy(newNumber.rbegin(), newNumber.rend(), std::ostream_iterator<int>(std::cout, " "));
+		std::vector<int> res = SubNumbers(newNumber, tmpNum);
+		if (tmpRes.size() != 0)
+		{
+			res = AddNumbers(newNumber, tmpRes);
+		}
+
+		int i = res.size() - 1;
+		for (i; i >= 0; --i)
+		{
+			if (res[i] != 0)
+			{
+				break;
+			}
+		}
+		for (i; i >= 0; --i)
+		{
+			output << res[i];
+		}
+		output << std::endl;
+
 	}
 	return EXIT_SUCCESS;
 }
