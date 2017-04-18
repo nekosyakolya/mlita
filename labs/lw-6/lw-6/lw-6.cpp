@@ -1,47 +1,9 @@
 #include "stdafx.h"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
+
 #include <algorithm>
 #include <iterator>
-struct Num
-{
-	std::vector<int> number;
-	unsigned count = 0;
-};
 
-
-std::vector<int> ReadNumber(const std::string &n, unsigned lenght)
-{
-	std::vector<int> num(lenght);
-	for (int i = n.length() - 1, j = 0; i >= 0; --i, ++j)
-	{
-		num[j] = static_cast<int>(n[i]) - '0';
-	}
-	return num;
-}
-
-unsigned GetNum(const std::vector<int> &number, unsigned pos)
-{
-	unsigned result = 0;
-	for (unsigned i = pos; i < number.size(); ++i)
-	{
-		result += number[i];
-	}
-	return result;
-}
-
-//надо защитить от переполнения
-void IncNumber(std::vector<int> &number, unsigned i)
-{
-	for (;number[i] + 1 > 9; ++i)
-	{
-		number[i] = 0;
-	}
-	++number[i];
-}
-
+#include "Ticket.h"
 
 std::vector<int> SubNumbers(std::vector<int> &num1, std::vector<int> &num2)
 {
@@ -72,14 +34,17 @@ std::vector<int> AddNumbers(std::vector<int> &num1, std::vector<int> &num2)
 	{
 		shortNum = num1[i] + num2[i];
 
-		if (shortNum > 9)
+		if (shortNum > MAX_BASE)
 		{
-			//++num1[i + 1];
 			if (i == result.size() - 1)
 			{
 				result.push_back(1);
 			}
-			shortNum %= 10;//-9?????
+			else
+			{
+				++result[i + 1];//??????
+			}
+			shortNum %= 10;
 		}
 		result[i] = shortNum;
 	}
@@ -88,27 +53,27 @@ std::vector<int> AddNumbers(std::vector<int> &num1, std::vector<int> &num2)
 }
 
 
-std::vector<int> CountNewNumber(const Num &first, const Num &second)
+std::vector<int> CountNewNumber(const std::pair <Num, Num> &numberTicket)
 {
-	std::vector<int> result = second.number;//wtf??
-	unsigned currResult = GetNum(second.number, 1);
+	std::vector<int> result = numberTicket.second.number;
+	unsigned currResult = numberTicket.second.count - numberTicket.second.number.front();//кроме последней цифры,то есть 0инд
 
-	int tmp = first.count - currResult;
-	for (size_t i = 0, j = second.number.size() - 1; tmp > 0; ++i, --j)
+	int tmp = numberTicket.first.count - currResult;
+	for (size_t i = 0, j = numberTicket.second.number.size() - 1; tmp > 0; ++i, --j)
 	{
-		if (tmp > 9)
+		if (tmp > MAX_BASE)
 		{
-			result[i] = 9;
+			result[i] = MAX_BASE;
 		}
 		else
 		{
 			if (tmp <= result[i])
 			{
 				result[i] += tmp;
-				if (result[i] > 9)
+				if (result[i] > MAX_BASE)
 				{
-					result[i + 1] = result[i] - 9;
-					result[i] = 9;
+					result[i + 1] = result[i] - MAX_BASE;
+					result[i] = MAX_BASE;
 					tmp -= result[i + 1];
 				}
 			}
@@ -124,116 +89,78 @@ std::vector<int> CountNewNumber(const Num &first, const Num &second)
 
 }
 
-
-int main()
+std::vector<int> GetResult(const CTicket &ticket)
 {
+	std::pair <Num, Num> number = ticket.GetValue();
 
-	std::ifstream input("input.txt");
-	std::ofstream output("output.txt");
-	unsigned numLenght = 0;
-	input >> numLenght;
-	input.get();
-
-	std::string tmpString;
-
-	input >> tmpString;
-	std::string firstNum = tmpString.substr(0, numLenght);
-	std::string secondNum = tmpString.substr(numLenght);
-
-
-	Num first;
-	Num second;
-
-
-	first.number = ReadNumber(firstNum, numLenght);
-	first.count = GetNum(first.number, 0);
-
-	second.number = ReadNumber(secondNum, numLenght);
-	second.count = GetNum(second.number, 0);
-
-
-	if (first.count == second.count)
+	std::vector<int> result = { 0 };
+	if (number.first.count > number.second.count)
 	{
-		output << 0;
+		std::vector<int> newNumber = CountNewNumber(number);
+		result = SubNumbers(newNumber, number.second.number);
 	}
-	else if (first.count > second.count)
+	else if (number.first.count < number.second.count)
 	{
+		unsigned tmp = number.second.count;
+		std::vector<int> tmpNum = number.second.number;
 
-		unsigned currResult = GetNum(second.number, 1);
-		
-
-		std::vector<int> newNumber = CountNewNumber(first, second);
-		std::vector<int> res = SubNumbers(newNumber, second.number);
-		int i = res.size() - 1;
-		for (i; i >= 0; --i)
+		if (number.second.number.size() != 1)
 		{
-			if (res[i] != 0)
+			for (size_t i = 0; (tmp > number.first.count || number.second.number[i] > MAX_BASE) && i < number.second.number.size() - 1; ++i)
 			{
-				break;
-			}
-		}
-		for (i; i >= 0; --i)
-		{
-			output << res[i];
-		}
-		output << std::endl;
-
-	}
-	else
-	{
-		unsigned tmp = second.count;
-		std::vector<int> tmpNum = second.number;
-
-		if (second.number.size() != 1)
-		{
-			for (size_t i = 0; (tmp > first.count || second.number[i] > 9) && i < second.number.size() - 1; ++i)
-			{
-				tmp -= second.number[i];
+				tmp -= number.second.number[i];
 				++tmp;
-				second.number[i] = 0;
-				++second.number[i + 1];//if >9?
-
+				number.second.number[i] = 0;
+				++number.second.number[i + 1];
 			}
 		}
 		std::vector<int> tmpRes;
-
-		//не нравится мне это условие
-		if (second.number.back() > 9 || second.number.size() == 1 || second.number.back() > first.count)
+		if (number.second.number.back() > MAX_BASE || number.second.number.back() > number.first.count)
 		{
-		/*if (second.number.size() == 1 || tmp > first.count)
-		{*/
-			std::vector<int> tmp(numLenght);
+			std::vector<int> tmp(tmpNum.size());
 			tmp.push_back(1);
 			tmpRes = SubNumbers(tmp, tmpNum);
 
-			second.number.back() = 0;
-			IncNumber(first.number, 0);
-			first.count = GetNum(first.number, 0);
+			number.second.number.back() = 0;
+			number.first.IncNumber();
+			number.first.Count();
 		}
-		second.count = GetNum(second.number, 0);
+		number.second.Count();
 
-		std::vector<int> newNumber = CountNewNumber(first, second);
-		std::vector<int> res = SubNumbers(newNumber, tmpNum);
-		if (tmpRes.size() != 0)
-		{
-			res = AddNumbers(newNumber, tmpRes);
-		}
-
-		int i = res.size() - 1;
-		for (i; i >= 0; --i)
-		{
-			if (res[i] != 0)
-			{
-				break;
-			}
-		}
-		for (i; i >= 0; --i)
-		{
-			output << res[i];
-		}
-		output << std::endl;
+		std::vector<int> newNumber = CountNewNumber(number);
+		result = (tmpRes.size() != 0) ? AddNumbers(newNumber, tmpRes) : SubNumbers(newNumber, tmpNum);
 
 	}
+	return result;
+
+}
+
+
+void OutputResult(std::vector<int>& result, std::ofstream &output)
+{
+	while (result.size() > 1)
+	{
+		if (*result.rbegin() == 0)
+		{
+			result.pop_back();
+		}
+		else
+		{
+			break;
+		}
+	}
+	std::copy(result.rbegin(), result.rend(), std::ostream_iterator<int>(output));
+}
+
+int main()
+{
+	std::ifstream input("input.txt");
+	std::ofstream output("output.txt");
+
+	CTicket ticket(input);
+
+	std::vector<int> result = GetResult(ticket);
+	OutputResult(result, output);
 	return EXIT_SUCCESS;
 }
 
