@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 
+static const int MAX_BASE = 9;
+
 struct Num
 {
 	std::vector<int> number;
@@ -26,10 +28,12 @@ struct Num
 		{
 			++number[i];
 		}
+		Count();
 	}
 
 	void Count()
 	{
+		count = 0;
 		for (unsigned i = 0; i < number.size(); ++i)
 		{
 			count += number[i];
@@ -52,5 +56,4 @@ private:
 		std::swap(num, number);
 	}
 };
-static const int MAX_BASE = 9;
 

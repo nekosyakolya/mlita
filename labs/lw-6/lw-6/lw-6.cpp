@@ -29,10 +29,12 @@ std::vector<int> SubNumbers(std::vector<int> &num1, std::vector<int> &num2)
 std::vector<int> AddNumbers(std::vector<int> &num1, std::vector<int> &num2)
 {
 	int shortNum = 0;
+	int inc = 0;
 	std::vector<int> result(num1.size());
 	for (size_t i = 0; i < num1.size() && i < num2.size(); ++i)
 	{
-		shortNum = num1[i] + num2[i];
+		shortNum = num1[i] + num2[i] + inc;
+		inc = 0;
 
 		if (shortNum > MAX_BASE)
 		{
@@ -42,7 +44,7 @@ std::vector<int> AddNumbers(std::vector<int> &num1, std::vector<int> &num2)
 			}
 			else
 			{
-				++result[i + 1];//??????
+				++inc;
 			}
 			shortNum %= 10;
 		}
@@ -56,7 +58,7 @@ std::vector<int> AddNumbers(std::vector<int> &num1, std::vector<int> &num2)
 std::vector<int> CountNewNumber(const std::pair <Num, Num> &numberTicket)
 {
 	std::vector<int> result = numberTicket.second.number;
-	unsigned currResult = numberTicket.second.count - numberTicket.second.number.front();//кроме последней цифры,то есть 0инд
+	unsigned currResult = numberTicket.second.count - numberTicket.second.number.front();
 
 	int tmp = numberTicket.first.count - currResult;
 	for (size_t i = 0, j = numberTicket.second.number.size() - 1; tmp > 0; ++i, --j)
@@ -123,7 +125,6 @@ std::vector<int> GetResult(const CTicket &ticket)
 
 			number.second.number.back() = 0;
 			number.first.IncNumber();
-			number.first.Count();
 		}
 		number.second.Count();
 
@@ -156,11 +157,16 @@ int main()
 {
 	std::ifstream input("input.txt");
 	std::ofstream output("output.txt");
-
-	CTicket ticket(input);
-
-	std::vector<int> result = GetResult(ticket);
-	OutputResult(result, output);
+	try
+	{
+		CTicket ticket(input);
+		std::vector<int> result = GetResult(ticket);
+		OutputResult(result, output);
+	}
+	catch (const std::logic_error &error)
+	{
+		std::cerr << error.what() << std::endl;;
+	}
 	return EXIT_SUCCESS;
 }
 
