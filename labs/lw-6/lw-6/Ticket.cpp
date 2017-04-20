@@ -5,7 +5,7 @@ const std::pair<std::string, std::string> CTicket::GetNumbers(std::ifstream &inp
 {
 	size_t lengthNumber = 0;
 	input >> lengthNumber;
-	if (lengthNumber > MAX_LENGTH)
+	if (lengthNumber > MAX_LENGTH || lengthNumber == 0)
 	{
 		throw std::logic_error("Is not a valid length\n");
 	}
