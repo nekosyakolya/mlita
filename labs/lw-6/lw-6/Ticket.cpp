@@ -1,17 +1,14 @@
 #include "stdafx.h"
 #include "Ticket.h"
 
-
-
 const std::pair<std::string, std::string> CTicket::GetNumbers(std::ifstream &input) const
 {
 	size_t lengthNumber = 0;
 	input >> lengthNumber;
-	if (lengthNumber > 500)
+	if (lengthNumber > MAX_LENGTH)
 	{
 		throw std::logic_error("Is not a valid length\n");
 	}
-
 	input.get();
 
 	std::string tmpString;
@@ -19,9 +16,7 @@ const std::pair<std::string, std::string> CTicket::GetNumbers(std::ifstream &inp
 	std::string firstNum = tmpString.substr(0, lengthNumber);
 	std::string secondNum = tmpString.substr(lengthNumber);
 	return std::make_pair(firstNum, secondNum);
-
 }
-
 
 CTicket::CTicket(std::ifstream &input)
 {
@@ -30,11 +25,18 @@ CTicket::CTicket(std::ifstream &input)
 	m_right.Initialization(numbers.second);
 }
 
-const std::pair<Num, Num> CTicket::GetValue() const
+const TicketNumber CTicket::GetValue() const
 {
-	return std::make_pair(m_left, m_right);
+	TicketNumber tmp;
+	tmp.left = m_left;
+	tmp.right = m_right;
+	return tmp;
 }
 
+bool CTicket::IsHappy() const
+{
+	return m_left.count == m_right.count;
+}
 
 CTicket::~CTicket()
 {

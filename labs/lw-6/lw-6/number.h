@@ -3,6 +3,7 @@
 #include <string>
 
 static const int MAX_BASE = 9;
+static const int MAX_LENGTH = 500;
 
 struct Num
 {
@@ -39,7 +40,7 @@ struct Num
 			count += number[i];
 		}
 	}
-
+	
 	void Initialization(const std::string &number)
 	{
 		ReadNumber(number);
@@ -49,7 +50,7 @@ private:
 	void ReadNumber(const std::string &numberStr)
 	{
 		std::vector<int> num(numberStr.length());
-		for (int i = numberStr.length() - 1, j = 0; i >= 0; --i, ++j)
+		for (int i = static_cast<int>(numberStr.length() - 1), j = 0; i >= 0; --i, ++j)
 		{
 			num[j] = static_cast<int>(numberStr[i]) - '0';
 		}
