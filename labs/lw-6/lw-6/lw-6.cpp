@@ -42,7 +42,7 @@ std::vector<int> AddNumbers(std::vector<int> &first, std::vector<int> &second)
 	return result;
 }
 
-unsigned GetSum(unsigned i, const std::vector<int> & number)
+unsigned GetSum(size_t i, const std::vector<int> & number)
 {
 	unsigned result = 0;
 	for (i; i < number.size(); ++i)
@@ -61,7 +61,7 @@ std::vector<int> GetNewNumber(const TicketNumber &ticket)
 
 	for (size_t i = 0; residue != 0; ++i)
 	{
-		result[i] = (residue >= MAX_BASE) ? MAX_BASE : residue;
+		result[i] = (residue >= MAX_BASE) ? MAX_BASE : static_cast<int>(residue);
 		placedNumbers += result[i];
 		residue = ticket.left.count - placedNumbers - GetSum(i + 2, result);
 	}
