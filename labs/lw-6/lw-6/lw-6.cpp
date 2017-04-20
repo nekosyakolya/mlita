@@ -19,7 +19,6 @@ std::vector<int> SubNumbers(const std::vector<int> &minuend, const std::vector<i
 		}
 		result.push_back(shortNum);
 	}
-
 	return result;
 }
 
@@ -53,42 +52,18 @@ unsigned GetSum(unsigned i, const std::vector<int> & number)
 	return result;
 }
 
-void SetShortNumber(size_t i, int &tmp, std::vector<int> &result)
-{
-	if (tmp <= result[i])
-	{
-		result[i] += tmp;
-		if (result[i] > MAX_BASE)
-		{
-			result[i + 1] = result[i] - MAX_BASE;
-			result[i] = MAX_BASE;
-			tmp -= result[i + 1];
-		}
-	}
-	else
-	{
-		result[i] = tmp;
-	}
-}
-
 std::vector<int> GetNewNumber(const TicketNumber &ticket)
 {
 	std::vector<int> result = ticket.right.number;
-	int tmp = ticket.left.count - (ticket.right.count - ticket.right.number.front());
 
-	for (size_t i = 0; tmp > 0; ++i)
+	size_t residue = ticket.left.count - (ticket.right.count - ticket.right.number.front());
+	int placedNumbers = 0;
+
+	for (size_t i = 0; residue != 0; ++i)
 	{
-		if (tmp > MAX_BASE)
-		{
-			result[i] = MAX_BASE;
-			tmp += GetSum(i + 1, result);
-		}
-		else
-		{
-			SetShortNumber(i, tmp, result);
-		}
-		
-		tmp -= result[i];
+		result[i] = (residue >= MAX_BASE) ? MAX_BASE : residue;
+		placedNumbers += result[i];
+		residue = ticket.left.count - placedNumbers - GetSum(i + 2, result);
 	}
 	return result;
 }
