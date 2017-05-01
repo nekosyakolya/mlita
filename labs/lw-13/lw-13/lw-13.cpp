@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <cmath>
 
 struct Position
 {
@@ -72,41 +73,25 @@ void OutputPosition(size_t i, const Position &position, std::ofstream &output)
 	output << std::endl;
 }
 
-void FindSample(std::string & sample, std::string & text, std::ofstream &output)
+size_t Find(const std::string & sample, const std::string & text, size_t i, const std::multimap <char, size_t>& base)
 {
-	bool isFind = false;
-	std::multimap <char, size_t> base = GetBase(sample);
-	Position position;
-
-	for (size_t i = sample.size() - 1, sampleIndex = i; i < text.size();)
+	int result = 1;
+	bool isFind = true;
+	for (int j = sample.size() - 1; j >= 0;--j, --i)
 	{
-		ToLowerCase(text[i]);
-		if (text[i] == sample[sampleIndex])
+		if (sample[j] != text[i])
 		{
-			if (sampleIndex == 0)
-			{
-				OutputPosition(i, position, output);
-				isFind = true;
-				sampleIndex = sample.size() - 1;
-				i += sample.size();
-			}
-			else
-			{
-				--sampleIndex;
-				--i;
-			}
-		}
-		else
-		{
-			i += GetNewIndex(sampleIndex, sample.size(), base, text[i]);
-			RecountPosition(i, text, position);
+			isFind = false;
+			result = (base.find(text[i]) != base.end()) ? (base.find(text[i])->second) : sample.size();
+			result -= ((sample.size() - 1) -j);
+			break;
 		}
 	}
-
-	if (!isFind)
+	if (isFind)
 	{
-		output << "No" << std::endl;
+		std::cout << "yes" << std::endl;
 	}
+	return abs(result);
 }
 
 int main()
@@ -122,9 +107,35 @@ int main()
 
 	std::ifstream dictionary(fileName);
 	std::string text;
-	getline(dictionary, text, '\0');
 
-	FindSample(sample, text, output);
+	getline(dictionary, text);
+
+	std::multimap <char, size_t> base = GetBase(sample);
+	
+	for (size_t i = sample.size() - 1; i < text.size() || !dictionary.eof();)
+	{
+
+		if (i >= text.size() && !dictionary.eof())
+		{
+			std::string tmp;
+			getline(dictionary, tmp);
+			text += ' ';
+			text += tmp;
+		}
+		else
+		{
+			ToLowerCase(text[i]);
+
+			if (text[i] == sample.back())
+			{
+				i += Find(sample, text, i, base);
+			}
+			else
+			{
+				i += (base.find(text[i]) != base.end()) ? (base.find(text[i])->second) : sample.size();
+			}
+		}
+	}
 
 	return EXIT_SUCCESS;
 }
