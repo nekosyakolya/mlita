@@ -3,13 +3,8 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <cmath>
-
-struct Position
-{
-	size_t row = 1;
-	size_t column = 0;
-};
+#include <vector>
+#include <algorithm>
 
 void ToLowerCase(char & symbol)
 {
@@ -28,8 +23,11 @@ std::multimap <char, size_t> GetBase(std::string & sample)
 	std::multimap <char, size_t> tmp;
 	for (int i = sample.size() - 1, j = 0; i >= 0; --i, ++j)
 	{
-		ToLowerCase(sample[i]);
-		tmp.emplace(sample[i], static_cast<size_t>(j));
+		if (tmp.find(sample[i]) == tmp.end())
+		{
+			ToLowerCase(sample[i]);
+			tmp.emplace(sample[i], static_cast<size_t>(j));
+		}
 	}
 	return tmp;
 }
@@ -51,48 +49,71 @@ size_t GetNewIndex(size_t &j, size_t size, const std::multimap <char, size_t>& b
 	return (base.find(symbol) != base.end()) ? (base.find(symbol)->second - numIdenticalSymbols) : size;
 }
 
-void RecountPosition(size_t i, std::string &text, Position &position)
+size_t Find(const std::vector<size_t> &positions, const std::string & sample, const std::string & text, size_t i, const std::multimap <char, size_t>& base, const std::vector<int>& suffics)
 {
-	if (i < text.size())
-	{
-		for (size_t tmp = position.column; tmp <= i; ++tmp)
-		{
-			if (text[tmp] == '\n')
-			{
-				text[tmp] = ' ';
-				++position.row;
-				position.column = tmp + 1;
-			}
-		}
-	}
-}
-
-void OutputPosition(size_t i, const Position &position, std::ofstream &output)
-{
-	(i < position.column) ? output << (position.row - 1) << ' ' << (i + 1) : output << position.row << ' ' << (i - position.column + 1);
-	output << std::endl;
-}
-
-size_t Find(const std::string & sample, const std::string & text, size_t i, const std::multimap <char, size_t>& base)
-{
-	int result = 1;
+	size_t result = 1;
 	bool isFind = true;
+	std::string textStr = text;
+	size_t index = positions.size() - 1;
+
 	for (int j = sample.size() - 1; j >= 0;--j, --i)
 	{
-		if (sample[j] != text[i])
+		if (textStr[i] == '\n')
+		{
+			textStr[i] = ' ';
+			--index;
+		}
+
+		if (sample[j] != textStr[i])
 		{
 			isFind = false;
-			result = (base.find(text[i]) != base.end()) ? (base.find(text[i])->second) : sample.size();
-			result -= ((sample.size() - 1) -j);
+			result = (base.find(textStr[i]) != base.end()) ? (base.find(textStr[i])->second) : sample.size();
+			if (result < ((sample.size() - 1) - j))
+			{
+				result = suffics[j];// + 1 мб...
+			}
+			else
+			{
+				result -= ((sample.size() - 1) - j);
+			}
+
 			break;
 		}
 	}
+	
+
 	if (isFind)
 	{
-		std::cout << "yes" << std::endl;
+		std::cout << "row: "  << (index + 1) << " col:" << ((i - positions[index]) + 2) << std::endl;
 	}
-	return abs(result);
+
+	return result;
 }
+
+std::vector<int> GetShift(const std::string & sample)
+{
+	size_t m = sample.size();
+
+	std::vector<int> suffshift(m + 1, m);
+	std::vector<int> z(m, 0);
+	for (int j = 1, maxZidx = 0, maxZ = 0; j < m; ++j) {
+		if (j <= maxZ) z[j] = std::min(maxZ - j + 1, z[j - maxZidx]);
+		while (j + z[j] < m && sample[m - 1 - z[j]] == sample[m - 1 - (j + z[j])]) z[j]++;
+		if (j + z[j] - 1 > maxZ) {
+			maxZidx = j;
+			maxZ = j + z[j] - 1;
+		}
+	}
+	for (int j = m - 1; j > 0; j--) suffshift[m - z[j]] = j; //цикл №1
+	for (int j = 1, r = 0; j <= m - 1; j++) //цикл №2
+		if (j + z[j] == m)
+			for (; r <= j; r++)
+				if (suffshift[r] == m) suffshift[r] = j;
+
+
+	return suffshift;
+}
+
 
 int main()
 {
@@ -111,7 +132,12 @@ int main()
 	getline(dictionary, text);
 
 	std::multimap <char, size_t> base = GetBase(sample);
-	
+
+	std::vector<int>result = GetShift(sample);
+
+	std::vector<size_t> positions;
+	positions.push_back(0);
+
 	for (size_t i = sample.size() - 1; i < text.size() || !dictionary.eof();)
 	{
 
@@ -119,20 +145,27 @@ int main()
 		{
 			std::string tmp;
 			getline(dictionary, tmp);
-			text += ' ';
+			text += '\n';
+
+			positions.push_back (text.size());
+			
 			text += tmp;
 		}
 		else
 		{
 			ToLowerCase(text[i]);
 
+
+
 			if (text[i] == sample.back())
 			{
-				i += Find(sample, text, i, base);
+				i += Find(positions, sample, text, i, base, result);
 			}
 			else
 			{
-				i += (base.find(text[i]) != base.end()) ? (base.find(text[i])->second) : sample.size();
+				char symbol = (text[i] == '\n') ? ' ' : text[i];
+				
+				i += (base.find(symbol) != base.end()) ? (base.find(symbol)->second) : sample.size();
 			}
 		}
 	}
