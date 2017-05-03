@@ -63,6 +63,10 @@ struct Template
 		}
 		std::swap(tmp, sufficsShift);
 	}
+	size_t GetShift(const char &symbol) const
+	{
+		return (base.find(symbol) != base.end()) ? (base.find(symbol)->second) : string.size();
+	}
 private:
 	std::vector<size_t> GetZFunction()
 	{
@@ -92,12 +96,8 @@ private:
 	}
 };
 
-size_t GetShift(const char &symbol, const std::multimap <char, size_t> &base, size_t sizeSample)
-{
-	return (base.find(symbol) != base.end()) ? (base.find(symbol)->second) : sizeSample;
-}
 
-size_t Find(const std::vector<size_t> &positions, const Template & sample, const std::string & text, size_t i)
+size_t Find(const std::vector<size_t> &positions, const Template & sample, const std::string & text, size_t i, std::ofstream &output)
 {
 	size_t result = 1;
 	bool isFind = true;
@@ -116,14 +116,14 @@ size_t Find(const std::vector<size_t> &positions, const Template & sample, const
 		if (sample.string[j] != textStr[i])
 		{
 			isFind = false;
-			result = GetShift(textStr[i], sample.base, sample.string.size());
+			result = sample.GetShift(textStr[i]);
 			result = (result < ((sample.string.size() - 1) - j)) ? sample.sufficsShift[j] : (result - ((sample.string.size() - 1) - j));
 			break;
 		}
 	}
 	if (isFind)
 	{
-		std::cout << (index + 1) << ' ' <<((i - positions[index]) + 2) << std::endl;
+		output << (index + 1) << ' ' <<((i - positions[index]) + 2) << std::endl;
 	}
 	return result;
 }
@@ -148,7 +148,7 @@ void FindSampleInText(Template &sample, std::ifstream &dictionary, std::ofstream
 		{
 			ToLowerCase(text[i]);
 			char symbol = (text[i] == '\n') ? ' ' : text[i];
-			i += (symbol == sample.string.back()) ? Find(positions, sample, text, i) : GetShift(symbol, sample.base, sample.string.size());
+			i += (symbol == sample.string.back()) ? Find(positions, sample, text, i, output) : sample.GetShift(symbol);
 		}
 	}
 }
