@@ -26,7 +26,7 @@ struct Template
 	void GetBase()
 	{
 		std::multimap <char, size_t> tmp;
-		for (int i = string.size() - 1, j = 0; i >= 0; --i, ++j)
+		for (int i = static_cast<int>(string.size() - 1), j = 0; i >= 0; --i, ++j)
 		{
 			if (tmp.find(string[i]) == tmp.end())
 			{
@@ -97,14 +97,15 @@ private:
 };
 
 
-size_t Find(const std::vector<size_t> &positions, const Template & sample, const std::string & text, size_t i, std::ofstream &output)
+size_t Find(const std::vector<size_t> &positions, const Template & sample, const std::string & text, size_t i, std::ofstream &output, bool & isFind)
 {
-	size_t result = 1;
-	bool isFind = true;
+	size_t shift = 1;
+
 	std::string textStr = text;
 	size_t index = positions.size() - 1;
 
-	for (int j = sample.string.size() - 1; j >= 0;--j, --i)
+	int j = static_cast<int>(sample.string.size() - 1);
+	for (; j >= 0;--j, --i)
 	{
 		if (textStr[i] == '\n')
 		{
@@ -115,17 +116,18 @@ size_t Find(const std::vector<size_t> &positions, const Template & sample, const
 		ToLowerCase(textStr[i]);
 		if (sample.string[j] != textStr[i])
 		{
-			isFind = false;
-			result = sample.GetShift(textStr[i]);
-			result = (result < ((sample.string.size() - 1) - j)) ? sample.sufficsShift[j] : (result - ((sample.string.size() - 1) - j));
+			shift = sample.GetShift(textStr[i]);
+			shift = (shift < ((sample.string.size() - 1) - j)) ? sample.sufficsShift[j] : (shift - ((sample.string.size() - 1) - j));
 			break;
 		}
 	}
-	if (isFind)
+
+	if (j < 0)
 	{
+		isFind = true;
 		output << (index + 1) << ' ' <<((i - positions[index]) + 2) << std::endl;
 	}
-	return result;
+	return shift;
 }
 
 void FindSampleInText(Template &sample, std::ifstream &dictionary, std::ofstream &output)
@@ -133,6 +135,7 @@ void FindSampleInText(Template &sample, std::ifstream &dictionary, std::ofstream
 	std::string text;
 	getline(dictionary, text);
 	std::vector<size_t> positions = { 0 };
+	bool isFind = false;
 
 	for (size_t i = sample.string.size() - 1; i < text.size() || !dictionary.eof();)
 	{
@@ -148,8 +151,12 @@ void FindSampleInText(Template &sample, std::ifstream &dictionary, std::ofstream
 		{
 			ToLowerCase(text[i]);
 			char symbol = (text[i] == '\n') ? ' ' : text[i];
-			i += (symbol == sample.string.back()) ? Find(positions, sample, text, i, output) : sample.GetShift(symbol);
+			i += (symbol == sample.string.back()) ? Find(positions, sample, text, i, output, isFind) : sample.GetShift(symbol);
 		}
+	}
+	if (!isFind)
+	{
+		output << "No" << std::endl;
 	}
 }
 
